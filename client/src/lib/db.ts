@@ -6,15 +6,16 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 
 // ── Types ──────────────────────────────────────────────────────────
-export type Category = "wash" | "delivery" | "pickup";
+export type Category = "wash" | "delivery" | "pickup" | "other";
 
 export interface Entry {
   id: string;
   date: string; // YYYY-MM-DD
   category: Category;
-  plate: string;
+  plate: string; // can be empty for "other" category
   price: number;
   note: string;
+  customTitle: string; // used when category is "other"
   createdAt: number; // timestamp
   updatedAt: number; // timestamp
 }
@@ -22,6 +23,8 @@ export interface Entry {
 export interface Plate {
   id: string;
   plate: string;
+  model: string; // e.g. "Yaris Ativ", "City Turbo"
+  color: string; // e.g. "ขาว", "ดำ"
   createdAt: number;
 }
 
@@ -51,8 +54,18 @@ let dbPromise: Promise<IDBPDatabase<MyCarRentDB>> | null = null;
 
 function getDB() {
   if (!dbPromise) {
-    dbPromise = openDB<MyCarRentDB>("my-car-rent-db", 1, {
-      upgrade(db) {
+    dbPromise = openDB<MyCarRentDB>("my-car-rent-db", 2, {
+      upgrade(db, oldVersion) {
+        // If upgrading from v1, delete old stores
+        if (oldVersion < 2) {
+          if (db.objectStoreNames.contains("entries")) {
+            db.deleteObjectStore("entries");
+          }
+          if (db.objectStoreNames.contains("plates")) {
+            db.deleteObjectStore("plates");
+          }
+        }
+
         // Entries store
         const entryStore = db.createObjectStore("entries", { keyPath: "id" });
         entryStore.createIndex("by-date", "date");
@@ -139,11 +152,17 @@ export async function getEntriesByDateRange(
 }
 
 // ── Plate CRUD ─────────────────────────────────────────────────────
-export async function addPlate(plateNumber: string): Promise<Plate> {
+export async function addPlate(
+  plateNumber: string,
+  model: string = "",
+  color: string = ""
+): Promise<Plate> {
   const db = await getDB();
   const plate: Plate = {
     id: generateId(),
-    plate: plateNumber.trim().toUpperCase(),
+    plate: plateNumber.trim(),
+    model: model.trim(),
+    color: color.trim(),
     createdAt: Date.now(),
   };
   await db.put("plates", plate);
@@ -152,14 +171,18 @@ export async function addPlate(plateNumber: string): Promise<Plate> {
 
 export async function updatePlate(
   id: string,
-  plateNumber: string
+  plateNumber: string,
+  model?: string,
+  color?: string
 ): Promise<Plate | undefined> {
   const db = await getDB();
   const existing = await db.get("plates", id);
   if (!existing) return undefined;
   const updated: Plate = {
     ...existing,
-    plate: plateNumber.trim().toUpperCase(),
+    plate: plateNumber.trim(),
+    ...(model !== undefined ? { model: model.trim() } : {}),
+    ...(color !== undefined ? { color: color.trim() } : {}),
   };
   await db.put("plates", updated);
   return updated;
@@ -175,6 +198,39 @@ export async function getAllPlates(): Promise<Plate[]> {
   return db.getAll("plates");
 }
 
+// ── Seed Real Plates ──────────────────────────────────────────────
+export async function seedRealPlates(): Promise<void> {
+  const db = await getDB();
+
+  // Check if plates already exist
+  const existingPlates = await db.count("plates");
+  if (existingPlates > 0) return;
+
+  const realPlates: { plate: string; model: string; color: string }[] = [
+    { plate: "ขฉ 9452", model: "Yaris Ativ", color: "ขาว" },
+    { plate: "ขฉ 7685", model: "Yaris Ativ", color: "ขาว" },
+    { plate: "ขฉ 7516", model: "Yaris Ativ", color: "เทา" },
+    { plate: "ขท 4090", model: "Yaris Ativ", color: "ขาว" },
+    { plate: "ขต 3245", model: "City Turbo", color: "ขาว" },
+    { plate: "ขต 9425", model: "City Turbo", color: "ขาว" },
+    { plate: "ขต 9542", model: "City Turbo", color: "ขาว" },
+    { plate: "ขท 529", model: "City Turbo", color: "ขาว" },
+    { plate: "ขท 595", model: "City Turbo", color: "ขาว" },
+    { plate: "ขธ 953", model: "City Turbo", color: "ขาว" },
+    { plate: "ขต 9452", model: "City eHEV", color: "ขาว" },
+    { plate: "ก 2064", model: "City eHEV", color: "ขาว" },
+    { plate: "ขง 3753", model: "City Hatchback", color: "" },
+    { plate: "ขจ 9894", model: "HRV", color: "ดำ" },
+    { plate: "ขธ 54", model: "HRV", color: "ขาว" },
+    { plate: "ขธ 945", model: "HRV", color: "ขาว" },
+    { plate: "ขธ 996", model: "HRV", color: "ขาว" },
+  ];
+
+  for (const p of realPlates) {
+    await addPlate(p.plate, p.model, p.color);
+  }
+}
+
 // ── Seed Sample Data ───────────────────────────────────────────────
 export async function seedSampleData(): Promise<void> {
   const db = await getDB();
@@ -183,26 +239,21 @@ export async function seedSampleData(): Promise<void> {
   const existingEntries = await db.count("entries");
   if (existingEntries > 0) return;
 
-  // Sample plates
-  const samplePlates = [
-    "กก 1234",
-    "ขข 5678",
-    "คค 9012",
-    "งง 3456",
-    "จจ 7890",
-  ];
-  for (const p of samplePlates) {
-    await addPlate(p);
-  }
+  // Ensure plates are seeded first
+  await seedRealPlates();
+
+  // Get all plates for sample entries
+  const allPlates = await getAllPlates();
+  const plateNumbers = allPlates.map((p) => p.plate);
 
   // Generate sample entries for the past 30 days
   const categories: Category[] = ["wash", "delivery", "pickup"];
-  const prices: Record<Category, number[]> = {
+  const prices: Record<string, number[]> = {
     wash: [200, 250, 300, 350, 400],
     delivery: [500, 600, 700, 800, 1000],
     pickup: [300, 400, 500, 600],
   };
-  const notes: Record<Category, string[]> = {
+  const notes: Record<string, string[]> = {
     wash: ["ล้างภายนอก", "ล้างทั้งภายในภายนอก", "ล้างแว็กซ์", ""],
     delivery: ["ส่งสนามบิน", "ส่งโรงแรม", "ส่งบ้านลูกค้า", ""],
     pickup: ["เก็บจากสนามบิน", "เก็บจากโรงแรม", "เก็บจากอู่", ""],
@@ -219,13 +270,34 @@ export async function seedSampleData(): Promise<void> {
     for (let i = 0; i < numEntries; i++) {
       const cat = categories[Math.floor(Math.random() * categories.length)];
       const plate =
-        samplePlates[Math.floor(Math.random() * samplePlates.length)];
+        plateNumbers[Math.floor(Math.random() * plateNumbers.length)];
       const price =
         prices[cat][Math.floor(Math.random() * prices[cat].length)];
       const note =
         notes[cat][Math.floor(Math.random() * notes[cat].length)];
 
-      await addEntry({ date: dateStr, category: cat, plate, price, note });
+      await addEntry({
+        date: dateStr,
+        category: cat,
+        plate,
+        price,
+        note,
+        customTitle: "",
+      });
+    }
+
+    // Occasionally add an "other" entry
+    if (Math.random() < 0.3) {
+      const otherTitles = ["ค่าน้ำมัน", "ค่าทางด่วน", "ค่าที่จอดรถ", "ค่าซ่อมบำรุง", "ค่าประกัน"];
+      const otherPrices = [100, 150, 200, 500, 1000, 1500];
+      await addEntry({
+        date: dateStr,
+        category: "other",
+        plate: "",
+        price: otherPrices[Math.floor(Math.random() * otherPrices.length)],
+        note: "",
+        customTitle: otherTitles[Math.floor(Math.random() * otherTitles.length)],
+      });
     }
   }
 }

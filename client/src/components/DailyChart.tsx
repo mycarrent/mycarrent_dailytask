@@ -1,6 +1,6 @@
 /**
- * DailyChart — 7-day stacked bar chart using Recharts
- * Shows income breakdown by category
+ * DailyChart — Stacked bar chart using Recharts
+ * Shows expense breakdown by category (wash, delivery, pickup, other)
  */
 import {
   BarChart,
@@ -19,11 +19,19 @@ interface DayData {
   wash: number;
   delivery: number;
   pickup: number;
+  other?: number;
 }
 
 interface Props {
   data: DayData[];
 }
+
+const LABEL_MAP: Record<string, string> = {
+  wash: "ล้างรถ",
+  delivery: "ส่งรถ",
+  pickup: "เก็บรถ",
+  other: "อื่นๆ",
+};
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -36,13 +44,7 @@ function CustomTooltip({ active, payload, label }: any) {
             className="w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: p.fill }}
           />
-          <span className="capitalize">
-            {p.dataKey === "wash"
-              ? "ล้างรถ"
-              : p.dataKey === "delivery"
-                ? "ส่งรถ"
-                : "เก็บรถ"}
-          </span>
+          <span>{LABEL_MAP[p.dataKey] || p.dataKey}</span>
           <span className="num-display ml-auto">{formatPriceFull(p.value)}</span>
         </div>
       ))}
@@ -74,7 +76,8 @@ export default function DailyChart({ data }: Props) {
         <Tooltip content={<CustomTooltip />} />
         <Bar dataKey="wash" stackId="a" fill="#3B82F6" radius={[0, 0, 0, 0]} />
         <Bar dataKey="delivery" stackId="a" fill="#10B981" radius={[0, 0, 0, 0]} />
-        <Bar dataKey="pickup" stackId="a" fill="#F97316" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="pickup" stackId="a" fill="#F97316" radius={[0, 0, 0, 0]} />
+        <Bar dataKey="other" stackId="a" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

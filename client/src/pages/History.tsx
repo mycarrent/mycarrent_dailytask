@@ -1,6 +1,7 @@
 /**
  * History Page — View, filter, edit, delete entries
  * Design: Filterable list with swipe-like actions, neo-brutalist cards
+ * Supports "other" category with customTitle display
  */
 import { useState, useMemo, useCallback } from "react";
 import { useData } from "@/contexts/DataContext";
@@ -10,6 +11,7 @@ import {
   formatPriceFull,
   formatDate,
   getTodayStr,
+  getEntryDisplayLabel,
 } from "@/lib/utils-app";
 import type { Category, Entry } from "@/lib/db";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,6 +25,7 @@ import {
   Droplets,
   Truck,
   KeyRound,
+  ClipboardList,
   ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -50,6 +53,7 @@ const CATEGORY_ICONS: Record<Category, React.ReactNode> = {
   wash: <Droplets className="w-4 h-4" />,
   delivery: <Truck className="w-4 h-4" />,
   pickup: <KeyRound className="w-4 h-4" />,
+  other: <ClipboardList className="w-4 h-4" />,
 };
 
 export default function History() {
@@ -68,6 +72,7 @@ export default function History() {
   const [editPlate, setEditPlate] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editNote, setEditNote] = useState("");
+  const [editCustomTitle, setEditCustomTitle] = useState("");
 
   // Delete state
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -92,7 +97,7 @@ export default function History() {
   );
 
   const uniquePlates = useMemo(
-    () => Array.from(new Set(entries.map((e) => e.plate))).sort(),
+    () => Array.from(new Set(entries.map((e) => e.plate).filter(Boolean))).sort(),
     [entries]
   );
 
@@ -103,16 +108,19 @@ export default function History() {
     setEditPlate(entry.plate);
     setEditPrice(String(entry.price));
     setEditNote(entry.note);
+    setEditCustomTitle(entry.customTitle || "");
   }, []);
 
   const handleUpdate = async () => {
     if (!editEntry) return;
+    const isOther = editCategory === "other";
     await updateEntry(editEntry.id, {
       date: editDate,
       category: editCategory,
-      plate: editPlate,
+      plate: isOther ? "" : editPlate,
       price: Number(editPrice),
       note: editNote,
+      customTitle: isOther ? editCustomTitle : "",
     });
     setEditEntry(null);
     toast.success("แก้ไขสำเร็จ");
@@ -260,17 +268,13 @@ export default function History() {
       {/* Entry List */}
       {filtered.length === 0 ? (
         <div className="text-center py-12">
-          <img
-            src="https://d2xsxph8kpxj0f.cloudfront.net/310519663452232695/Geqw5Dwwk2pA5LmRx3Tkji/empty-state-3rwJNcKJtW8sAkWGarHkQp.webp"
-            alt="No data"
-            className="w-28 h-28 mx-auto mb-3 opacity-50"
-          />
           <p className="text-muted-foreground text-sm">ไม่พบรายการ</p>
         </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((entry) => {
             const config = CATEGORIES[entry.category];
+            const displayLabel = getEntryDisplayLabel(entry);
             return (
               <motion.div
                 key={entry.id}
@@ -289,7 +293,9 @@ export default function History() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="font-medium text-sm">{entry.plate}</span>
+                      {entry.plate ? (
+                        <span className="font-medium text-sm">{entry.plate}</span>
+                      ) : null}
                       <span
                         className="text-xs px-2 py-0.5 rounded-full font-medium"
                         style={{
@@ -297,7 +303,7 @@ export default function History() {
                           color: config.color,
                         }}
                       >
-                        {config.label}
+                        {displayLabel}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -305,7 +311,7 @@ export default function History() {
                       {entry.note ? ` · ${entry.note}` : ""}
                     </p>
                   </div>
-                  <span className="num-display text-sm font-bold shrink-0 mr-1">
+                  <span className="num-display text-sm font-semibold shrink-0">
                     {formatPriceFull(entry.price)}
                   </span>
                   <div className="flex gap-1 shrink-0">
@@ -351,12 +357,15 @@ export default function History() {
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
                 ประเภท
               </label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-4 gap-1.5">
                 {CATEGORY_LIST.map((cat) => (
                   <button
                     key={cat}
-                    onClick={() => setEditCategory(cat)}
-                    className={`flex-1 px-2 py-2 rounded-lg text-sm border-2 text-center transition-colors`}
+                    onClick={() => {
+                      setEditCategory(cat);
+                      if (cat === "other") setEditPlate("");
+                    }}
+                    className={`px-2 py-2 rounded-lg text-xs border-2 text-center transition-colors`}
                     style={{
                       borderColor:
                         editCategory === cat
@@ -377,24 +386,44 @@ export default function History() {
                 ))}
               </div>
             </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                ทะเบียนรถ
-              </label>
-              <select
-                value={editPlate}
-                onChange={(e) => setEditPlate(e.target.value)}
-                className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm bg-card appearance-none"
-              >
-                {Array.from(new Set([...plates.map((p) => p.plate), editPlate])).map(
-                  (p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
+
+            {/* Custom Title for "other" */}
+            {editCategory === "other" && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  หัวข้อ
+                </label>
+                <Input
+                  value={editCustomTitle}
+                  onChange={(e) => setEditCustomTitle(e.target.value)}
+                  placeholder="เช่น ค่าน้ำมัน, ค่าทางด่วน..."
+                  className="border-2"
+                />
+              </div>
+            )}
+
+            {/* Plate (hidden for "other") */}
+            {editCategory !== "other" && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  ทะเบียนรถ
+                </label>
+                <select
+                  value={editPlate}
+                  onChange={(e) => setEditPlate(e.target.value)}
+                  className="w-full border-2 border-border rounded-lg px-3 py-2 text-sm bg-card appearance-none"
+                >
+                  {Array.from(new Set([...plates.map((p) => p.plate), editPlate].filter(Boolean))).map(
+                    (p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+            )}
+
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
                 ราคา (บาท)

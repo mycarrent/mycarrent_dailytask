@@ -33,9 +33,17 @@ export const CATEGORIES: Record<
     borderColor: "#F97316",
     icon: "🔑",
   },
+  other: {
+    label: "อื่นๆ",
+    labelEn: "Other",
+    color: "#8B5CF6",
+    bgColor: "#EDE9FE",
+    borderColor: "#8B5CF6",
+    icon: "📋",
+  },
 };
 
-export const CATEGORY_LIST: Category[] = ["wash", "delivery", "pickup"];
+export const CATEGORY_LIST: Category[] = ["wash", "delivery", "pickup", "other"];
 
 // ── Formatting ─────────────────────────────────────────────────────
 export function formatPrice(price: number): string {
@@ -49,9 +57,9 @@ export function formatPriceFull(price: number): string {
 export function formatDate(dateStr: string): string {
   const date = new Date(dateStr + "T00:00:00");
   return date.toLocaleDateString("th-TH", {
-    weekday: "short",
+    weekday: "long",
     year: "numeric",
-    month: "short",
+    month: "long",
     day: "numeric",
   });
 }
@@ -105,6 +113,7 @@ export function summarizeByCategory(entries: Entry[]): CategorySummary[] {
     wash: { category: "wash", count: 0, total: 0 },
     delivery: { category: "delivery", count: 0, total: 0 },
     pickup: { category: "pickup", count: 0, total: 0 },
+    other: { category: "other", count: 0, total: 0 },
   };
   for (const e of entries) {
     map[e.category].count++;
@@ -117,12 +126,20 @@ export function totalIncome(entries: Entry[]): number {
   return entries.reduce((sum, e) => sum + e.price, 0);
 }
 
+// ── Display helper for entry label ─────────────────────────────────
+export function getEntryDisplayLabel(entry: Entry): string {
+  if (entry.category === "other") {
+    return entry.customTitle || "อื่นๆ";
+  }
+  return CATEGORIES[entry.category].label;
+}
+
 // ── Export Helpers ──────────────────────────────────────────────────
 export function entriesToCSV(entries: Entry[]): string {
-  const header = "Date,Category,Category (TH),Plate,Price (THB),Note";
+  const header = "Date,Category,Category (TH),Plate,Price (THB),Custom Title,Note";
   const rows = entries.map(
     (e) =>
-      `${e.date},${e.category},${CATEGORIES[e.category].label},${e.plate},${e.price},"${e.note || ""}"`
+      `${e.date},${e.category},${e.category === "other" ? (e.customTitle || "อื่นๆ") : CATEGORIES[e.category].label},${e.plate},${e.price},"${e.customTitle || ""}","${e.note || ""}"`
   );
   return [header, ...rows].join("\n");
 }
@@ -144,7 +161,7 @@ export function entriesToText(entries: Entry[], title: string): string {
   }
 
   lines.push("─".repeat(40));
-  lines.push(`💰 รวมทั้งหมด: ฿${formatPrice(totalIncome(entries))}`);
+  lines.push(`💰 รวมรายจ่ายทั้งหมด: ฿${formatPrice(totalIncome(entries))}`);
   lines.push(`📊 จำนวนรายการ: ${entries.length}`);
   lines.push("─".repeat(40));
   lines.push("");
@@ -152,8 +169,10 @@ export function entriesToText(entries: Entry[], title: string): string {
   lines.push("รายละเอียด:");
   for (const e of entries) {
     const cat = CATEGORIES[e.category];
+    const label = e.category === "other" ? (e.customTitle || "อื่นๆ") : cat.label;
+    const plateStr = e.plate ? `${e.plate} | ` : "";
     lines.push(
-      `  ${cat.icon} ${e.plate} | ${cat.label} | ฿${formatPrice(e.price)}${e.note ? ` | ${e.note}` : ""}`
+      `  ${cat.icon} ${plateStr}${label} | ฿${formatPrice(e.price)}${e.note ? ` | ${e.note}` : ""}`
     );
   }
 

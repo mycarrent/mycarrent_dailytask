@@ -12,16 +12,18 @@ import {
   summarizeByCategory,
   totalIncome,
   formatDate,
+  getEntryDisplayLabel,
 } from "@/lib/utils-app";
 import type { Category } from "@/lib/db";
 import { motion } from "framer-motion";
-import { Droplets, Truck, KeyRound, TrendingUp, CalendarDays } from "lucide-react";
+import { Droplets, Truck, KeyRound, ClipboardList, TrendingUp, CalendarDays } from "lucide-react";
 import DailyChart from "@/components/DailyChart";
 
 const CATEGORY_ICONS: Record<Category, React.ReactNode> = {
   wash: <Droplets className="w-6 h-6" />,
   delivery: <Truck className="w-6 h-6" />,
   pickup: <KeyRound className="w-6 h-6" />,
+  other: <ClipboardList className="w-6 h-6" />,
 };
 
 export default function Dashboard() {
@@ -53,7 +55,7 @@ export default function Dashboard() {
 
   // Last 7 days data for chart
   const last7Days = useMemo(() => {
-    const days: { date: string; total: number; wash: number; delivery: number; pickup: number }[] = [];
+    const days: { date: string; total: number; wash: number; delivery: number; pickup: number; other: number }[] = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
@@ -65,6 +67,7 @@ export default function Dashboard() {
         wash: dayEntries.filter((e) => e.category === "wash").reduce((s, e) => s + e.price, 0),
         delivery: dayEntries.filter((e) => e.category === "delivery").reduce((s, e) => s + e.price, 0),
         pickup: dayEntries.filter((e) => e.category === "pickup").reduce((s, e) => s + e.price, 0),
+        other: dayEntries.filter((e) => e.category === "other").reduce((s, e) => s + e.price, 0),
       });
     }
     return days;
@@ -81,7 +84,7 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold">สรุปวันนี้</h1>
       </div>
 
-      {/* Total Income Card */}
+      {/* Total Expense Card */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -89,7 +92,7 @@ export default function Dashboard() {
       >
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm opacity-80 mb-1">รายได้วันนี้</p>
+            <p className="text-sm opacity-80 mb-1">รายจ่ายวันนี้</p>
             <p className="text-3xl font-bold num-display">{formatPriceFull(todayTotal)}</p>
             <p className="text-sm opacity-70 mt-1">{todayEntries.length} รายการ</p>
           </div>
@@ -97,7 +100,7 @@ export default function Dashboard() {
             <div className="text-right">
               <div className="flex items-center gap-1 justify-end opacity-80 mb-1">
                 <TrendingUp className="w-4 h-4" />
-                <span className="text-xs">ทำรายได้สูงสุด</span>
+                <span className="text-xs">รายจ่ายสูงสุด</span>
               </div>
               <div
                 className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
@@ -115,7 +118,7 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Category Cards */}
-      <div className="grid grid-cols-3 gap-3 mb-6 stagger-children">
+      <div className="grid grid-cols-4 gap-2 mb-6 stagger-children">
         {CATEGORY_LIST.map((cat) => {
           const s = todaySummary.find((x) => x.category === cat)!;
           const config = CATEGORIES[cat];
@@ -123,20 +126,20 @@ export default function Dashboard() {
             <motion.div
               key={cat}
               whileTap={{ scale: 0.97 }}
-              className="brutal-card p-4 text-center"
+              className="brutal-card p-3 text-center"
               style={{ borderColor: config.color }}
             >
               <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2"
+                className="w-9 h-9 rounded-lg flex items-center justify-center mx-auto mb-1.5"
                 style={{ backgroundColor: config.bgColor, color: config.color }}
               >
                 {CATEGORY_ICONS[cat]}
               </div>
-              <p className="text-xs text-muted-foreground mb-1">{config.label}</p>
-              <p className="text-lg font-bold num-display" style={{ color: config.color }}>
+              <p className="text-[11px] text-muted-foreground mb-0.5">{config.label}</p>
+              <p className="text-base font-bold num-display" style={{ color: config.color }}>
                 {s.count}
               </p>
-              <p className="text-xs num-display text-muted-foreground">
+              <p className="text-[10px] num-display text-muted-foreground">
                 {formatPriceFull(s.total)}
               </p>
             </motion.div>
@@ -146,7 +149,7 @@ export default function Dashboard() {
 
       {/* 7-Day Chart */}
       <div className="brutal-card p-4 mb-6">
-        <h2 className="text-base font-semibold mb-3">รายได้ 7 วันล่าสุด</h2>
+        <h2 className="text-base font-semibold mb-3">รายจ่าย 7 วันล่าสุด</h2>
         <DailyChart data={last7Days} />
       </div>
 
@@ -155,11 +158,6 @@ export default function Dashboard() {
         <h2 className="text-base font-semibold mb-3">กิจกรรมล่าสุด</h2>
         {recentEntries.length === 0 ? (
           <div className="text-center py-8">
-            <img
-              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663452232695/Geqw5Dwwk2pA5LmRx3Tkji/empty-state-3rwJNcKJtW8sAkWGarHkQp.webp"
-              alt="No data"
-              className="w-32 h-32 mx-auto mb-3 opacity-60"
-            />
             <p className="text-muted-foreground text-sm">ยังไม่มีรายการ</p>
           </div>
         ) : (
@@ -181,7 +179,9 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">{entry.plate}</span>
+                      {entry.plate && (
+                        <span className="font-medium text-sm truncate">{entry.plate}</span>
+                      )}
                       <span
                         className="text-xs px-2 py-0.5 rounded-full font-medium"
                         style={{
@@ -189,7 +189,7 @@ export default function Dashboard() {
                           color: config.color,
                         }}
                       >
-                        {config.label}
+                        {getEntryDisplayLabel(entry)}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">

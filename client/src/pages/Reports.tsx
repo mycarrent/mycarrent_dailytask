@@ -1,6 +1,7 @@
 /**
  * Reports Page — Summary & Reports with daily/weekly/monthly views
  * Design: Category breakdown cards, grand total, period switching
+ * Changed: "รายได้" → "รายจ่าย", added "other" category
  */
 import { useState, useMemo, useRef } from "react";
 import { useData } from "@/contexts/DataContext";
@@ -80,7 +81,7 @@ export default function Reports() {
 
   // Chart data for the period
   const chartData = useMemo(() => {
-    const days: { date: string; total: number; wash: number; delivery: number; pickup: number }[] = [];
+    const days: { date: string; total: number; wash: number; delivery: number; pickup: number; other: number }[] = [];
     const start = new Date(dateRange.start + "T00:00:00");
     const end = new Date(dateRange.end + "T00:00:00");
     const current = new Date(start);
@@ -93,6 +94,7 @@ export default function Reports() {
         wash: dayEntries.filter((e) => e.category === "wash").reduce((s, e) => s + e.price, 0),
         delivery: dayEntries.filter((e) => e.category === "delivery").reduce((s, e) => s + e.price, 0),
         pickup: dayEntries.filter((e) => e.category === "pickup").reduce((s, e) => s + e.price, 0),
+        other: dayEntries.filter((e) => e.category === "other").reduce((s, e) => s + e.price, 0),
       });
       current.setDate(current.getDate() + 1);
     }
@@ -195,7 +197,7 @@ export default function Reports() {
           animate={{ opacity: 1, y: 0 }}
           className="brutal-card p-5 mb-4 bg-foreground text-background"
         >
-          <p className="text-sm opacity-80 mb-1">รวมทั้งหมด</p>
+          <p className="text-sm opacity-80 mb-1">รวมรายจ่ายทั้งหมด</p>
           <p className="text-3xl font-bold num-display">{formatPriceFull(total)}</p>
           <div className="flex items-center gap-3 mt-2">
             <span className="text-sm opacity-70">
@@ -266,7 +268,7 @@ export default function Reports() {
       {/* Chart */}
       {chartData.length > 1 && (
         <div className="brutal-card p-4 mb-5">
-          <h2 className="text-sm font-semibold mb-3">กราฟรายได้</h2>
+          <h2 className="text-sm font-semibold mb-3">กราฟรายจ่าย</h2>
           <DailyChart data={chartData} />
         </div>
       )}

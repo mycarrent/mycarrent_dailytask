@@ -1,10 +1,11 @@
 /**
  * Vehicles Page — Manage license plates (add, edit, delete)
  * Design: Simple list with neo-brutalist cards
+ * Shows model and color info for each plate
  */
 import { useState, useMemo } from "react";
 import { useData } from "@/contexts/DataContext";
-import { CATEGORIES, formatPriceFull } from "@/lib/utils-app";
+import { formatPriceFull } from "@/lib/utils-app";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -40,14 +41,19 @@ export default function Vehicles() {
 
   const [showAdd, setShowAdd] = useState(false);
   const [newPlate, setNewPlate] = useState("");
+  const [newModel, setNewModel] = useState("");
+  const [newColor, setNewColor] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [editModel, setEditModel] = useState("");
+  const [editColor, setEditColor] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Stats per plate
   const plateStats = useMemo(() => {
     const stats: Record<string, { count: number; total: number }> = {};
     for (const e of entries) {
+      if (!e.plate) continue;
       if (!stats[e.plate]) stats[e.plate] = { count: 0, total: 0 };
       stats[e.plate].count++;
       stats[e.plate].total += e.price;
@@ -61,21 +67,25 @@ export default function Vehicles() {
       return;
     }
     // Check duplicate
-    if (plates.some((p) => p.plate === newPlate.trim().toUpperCase())) {
+    if (plates.some((p) => p.plate === newPlate.trim())) {
       toast.error("ทะเบียนรถนี้มีอยู่แล้ว");
       return;
     }
-    await addPlate(newPlate.trim());
+    await addPlate(newPlate.trim(), newModel.trim(), newColor.trim());
     setNewPlate("");
+    setNewModel("");
+    setNewColor("");
     setShowAdd(false);
     toast.success("เพิ่มทะเบียนรถสำเร็จ");
   };
 
   const handleEdit = async () => {
     if (!editId || !editValue.trim()) return;
-    await updatePlate(editId, editValue.trim());
+    await updatePlate(editId, editValue.trim(), editModel.trim(), editColor.trim());
     setEditId(null);
     setEditValue("");
+    setEditModel("");
+    setEditColor("");
     toast.success("แก้ไขสำเร็จ");
   };
 
@@ -130,8 +140,13 @@ export default function Vehicles() {
                       <Car className="w-6 h-6 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-lg">{plate.plate}</p>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <p className="font-semibold text-base">{plate.plate}</p>
+                      {(plate.model || plate.color) && (
+                        <p className="text-xs text-muted-foreground">
+                          {plate.model}{plate.model && plate.color ? " · " : ""}{plate.color}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                         <span className="flex items-center gap-1">
                           <Hash className="w-3 h-3" />
                           {stats.count} รายการ
@@ -146,6 +161,8 @@ export default function Vehicles() {
                         onClick={() => {
                           setEditId(plate.id);
                           setEditValue(plate.plate);
+                          setEditModel(plate.model || "");
+                          setEditColor(plate.color || "");
                         }}
                         className="w-9 h-9 rounded-lg border-2 border-border flex items-center justify-center hover:bg-accent transition-colors"
                       >
@@ -172,13 +189,36 @@ export default function Vehicles() {
           <DialogHeader>
             <DialogTitle>เพิ่มทะเบียนรถใหม่</DialogTitle>
           </DialogHeader>
-          <Input
-            value={newPlate}
-            onChange={(e) => setNewPlate(e.target.value)}
-            placeholder="เช่น กก 1234"
-            className="text-lg py-6 border-2"
-            autoFocus
-          />
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">ทะเบียนรถ</label>
+              <Input
+                value={newPlate}
+                onChange={(e) => setNewPlate(e.target.value)}
+                placeholder="เช่น กก 1234"
+                className="text-lg py-5 border-2"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">รุ่นรถ (ไม่บังคับ)</label>
+              <Input
+                value={newModel}
+                onChange={(e) => setNewModel(e.target.value)}
+                placeholder="เช่น City Turbo, Yaris Ativ"
+                className="border-2"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">สี (ไม่บังคับ)</label>
+              <Input
+                value={newColor}
+                onChange={(e) => setNewColor(e.target.value)}
+                placeholder="เช่น ขาว, ดำ, เทา"
+                className="border-2"
+              />
+            </div>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAdd(false)}>
               ยกเลิก
@@ -197,12 +237,35 @@ export default function Vehicles() {
           <DialogHeader>
             <DialogTitle>แก้ไขทะเบียนรถ</DialogTitle>
           </DialogHeader>
-          <Input
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            className="text-lg py-6 border-2"
-            autoFocus
-          />
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">ทะเบียนรถ</label>
+              <Input
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                className="text-lg py-5 border-2"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">รุ่นรถ</label>
+              <Input
+                value={editModel}
+                onChange={(e) => setEditModel(e.target.value)}
+                placeholder="เช่น City Turbo"
+                className="border-2"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">สี</label>
+              <Input
+                value={editColor}
+                onChange={(e) => setEditColor(e.target.value)}
+                placeholder="เช่น ขาว"
+                className="border-2"
+              />
+            </div>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditId(null)}>
               ยกเลิก

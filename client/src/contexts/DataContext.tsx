@@ -16,6 +16,7 @@ import {
   updatePlate as dbUpdatePlate,
   deletePlate as dbDeletePlate,
   seedSampleData,
+  seedRealPlates,
 } from "@/lib/db";
 
 interface DataContextValue {
@@ -25,8 +26,8 @@ interface DataContextValue {
   addEntry: (data: Omit<Entry, "id" | "createdAt" | "updatedAt">) => Promise<Entry>;
   updateEntry: (id: string, data: Partial<Omit<Entry, "id" | "createdAt">>) => Promise<Entry | undefined>;
   deleteEntry: (id: string) => Promise<void>;
-  addPlate: (plate: string) => Promise<Plate>;
-  updatePlate: (id: string, plate: string) => Promise<Plate | undefined>;
+  addPlate: (plate: string, model?: string, color?: string) => Promise<Plate>;
+  updatePlate: (id: string, plate: string, model?: string, color?: string) => Promise<Plate | undefined>;
   deletePlate: (id: string) => Promise<void>;
   refresh: () => Promise<void>;
   seedData: () => Promise<void>;
@@ -41,19 +42,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     const [e, p] = await Promise.all([getAllEntries(), getAllPlates()]);
-    // Sort entries by date desc, then createdAt desc
     e.sort((a, b) => {
       if (a.date !== b.date) return b.date.localeCompare(a.date);
       return b.createdAt - a.createdAt;
     });
-    // Sort plates alphabetically
     p.sort((a, b) => a.plate.localeCompare(b.plate));
     setEntries(e);
     setPlates(p);
   }, []);
 
   useEffect(() => {
-    refresh().finally(() => setLoading(false));
+    seedRealPlates()
+      .then(() => refresh())
+      .finally(() => setLoading(false));
   }, [refresh]);
 
   const addEntry = useCallback(
@@ -83,8 +84,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addPlate = useCallback(
-    async (plate: string) => {
-      const p = await dbAddPlate(plate);
+    async (plate: string, model?: string, color?: string) => {
+      const p = await dbAddPlate(plate, model || "", color || "");
       await refresh();
       return p;
     },
@@ -92,8 +93,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updatePlate = useCallback(
-    async (id: string, plate: string) => {
-      const p = await dbUpdatePlate(id, plate);
+    async (id: string, plate: string, model?: string, color?: string) => {
+      const p = await dbUpdatePlate(id, plate, model, color);
       await refresh();
       return p;
     },
