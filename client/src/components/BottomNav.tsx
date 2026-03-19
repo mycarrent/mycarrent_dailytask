@@ -1,6 +1,6 @@
 /**
  * BottomNav — Mobile bottom tab navigation
- * Design: Clean Light Mode — soft shadow, pill active states, floating FAB
+ * Design: Clean Light Mode — all items same size, balanced layout
  */
 import { useLocation, Link } from "wouter";
 import { motion } from "framer-motion";
@@ -18,7 +18,7 @@ import { useState } from "react";
 const NAV_ITEMS = [
   { path: "/", label: "หน้าหลัก", icon: LayoutDashboard },
   { path: "/history", label: "ประวัติ", icon: ClipboardList },
-  { path: "/add", label: "เพิ่ม", icon: Plus, isFab: true },
+  { path: "/add", label: "เพิ่มรายการ", icon: Plus, isPrimary: true },
   { path: "/reports", label: "รายงาน", icon: BarChart3 },
   { path: "/more", label: "เพิ่มเติม", icon: MoreHorizontal, isMore: true },
 ];
@@ -44,7 +44,7 @@ export default function BottomNav() {
         />
       )}
 
-      {/* More menu popup — clean card */}
+      {/* More menu popup */}
       {showMore && (
         <motion.div
           initial={{ opacity: 0, y: 12, scale: 0.95 }}
@@ -76,44 +76,10 @@ export default function BottomNav() {
       )}
 
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg safe-bottom" style={{ boxShadow: "0 -1px 12px rgba(0,0,0,0.04)" }}>
-        <div className="max-w-lg mx-auto flex items-end justify-around px-2 pt-1.5 pb-1.5">
+        <div className="max-w-lg mx-auto flex items-center justify-around px-1 pt-1.5 pb-1.5">
           {NAV_ITEMS.map((item) => {
             const active = item.isMore ? isMoreActive : location === item.path;
             const Icon = item.icon;
-
-            if (item.isFab) {
-              return (
-                <Link key={item.path} href={item.path}>
-                  <motion.div
-                    whileTap={{ scale: 0.9 }}
-                    className="relative -top-4"
-                  >
-                    <div
-                      className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
-                        location === item.path
-                          ? "text-white"
-                          : "bg-white text-orange-500"
-                      }`}
-                      style={{
-                        background: location === item.path
-                          ? "linear-gradient(135deg, #FB923C, #EA580C)"
-                          : undefined,
-                        boxShadow: location === item.path
-                          ? "0 4px 16px rgba(234,88,12,0.35)"
-                          : "0 2px 12px rgba(0,0,0,0.08)",
-                      }}
-                    >
-                      <Icon className="w-6 h-6" strokeWidth={2.5} />
-                    </div>
-                    <span className={`text-[10px] font-medium text-center block mt-0.5 ${
-                      location === item.path ? "text-orange-600" : "text-gray-400"
-                    }`}>
-                      {item.label}
-                    </span>
-                  </motion.div>
-                </Link>
-              );
-            }
 
             if (item.isMore) {
               return (
@@ -121,7 +87,7 @@ export default function BottomNav() {
                   key="more"
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setShowMore(!showMore)}
-                  className="flex flex-col items-center py-1.5 px-2 min-w-[52px]"
+                  className="flex flex-col items-center justify-center py-1.5 flex-1"
                 >
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
@@ -133,7 +99,7 @@ export default function BottomNav() {
                     <Icon className="w-5 h-5" />
                   </div>
                   <span
-                    className={`text-[10px] mt-0.5 ${
+                    className={`text-[10px] mt-0.5 leading-tight ${
                       active
                         ? "font-medium text-orange-600"
                         : "text-gray-400"
@@ -145,11 +111,46 @@ export default function BottomNav() {
               );
             }
 
+            if (item.isPrimary) {
+              return (
+                <Link key={item.path} href={item.path}>
+                  <motion.div
+                    whileTap={{ scale: 0.9 }}
+                    className="flex flex-col items-center justify-center py-1.5 flex-1"
+                  >
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                        location === item.path
+                          ? "bg-orange-500 text-white"
+                          : "bg-orange-50 text-orange-500"
+                      }`}
+                      style={
+                        location === item.path
+                          ? { boxShadow: "0 2px 8px rgba(234,88,12,0.3)" }
+                          : undefined
+                      }
+                    >
+                      <Icon className="w-5 h-5" strokeWidth={2.5} />
+                    </div>
+                    <span
+                      className={`text-[10px] mt-0.5 leading-tight ${
+                        location === item.path
+                          ? "font-medium text-orange-600"
+                          : "text-orange-500"
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                  </motion.div>
+                </Link>
+              );
+            }
+
             return (
               <Link key={item.path} href={item.path}>
                 <motion.div
                   whileTap={{ scale: 0.9 }}
-                  className="flex flex-col items-center py-1.5 px-2 min-w-[52px]"
+                  className="flex flex-col items-center justify-center py-1.5 flex-1"
                 >
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
@@ -161,7 +162,7 @@ export default function BottomNav() {
                     <Icon className="w-5 h-5" />
                   </div>
                   <span
-                    className={`text-[10px] mt-0.5 ${
+                    className={`text-[10px] mt-0.5 leading-tight ${
                       active
                         ? "font-medium text-orange-600"
                         : "text-gray-400"
