@@ -209,7 +209,7 @@ export async function seedRealPlates(): Promise<void> {
   const realPlates: { plate: string; model: string; color: string }[] = [
     { plate: "ขฉ 9452", model: "Yaris Ativ", color: "ขาว" },
     { plate: "ขฉ 7685", model: "Yaris Ativ", color: "เทา" },
-    { plate: "ขฉ 7516", model: "Yaris Ativ", color: "เทา" },
+    { plate: "ขฉ 7516", model: "Yaris Ativ", color: "ขาว" },
     { plate: "ขท 4090", model: "Yaris Ativ", color: "ขาว" },
     { plate: "ขต 3245", model: "City Turbo", color: "ขาว" },
     { plate: "ขต 9425", model: "City Turbo", color: "ขาว" },
