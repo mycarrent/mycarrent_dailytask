@@ -133,7 +133,7 @@ export default function AddEntry() {
                   if (cat === "other") setPlate("");
                 }}
                 className={`brutal-card p-3 text-center transition-all ${
-                  selected ? "!bg-foreground !text-background" : ""
+                  selected ? "!bg-orange-50" : ""
                 }`}
                 style={{
                   borderColor: selected ? config.color : undefined,
@@ -271,7 +271,8 @@ export default function AddEntry() {
         whileTap={{ scale: 0.97 }}
         onClick={handleSave}
         disabled={saving}
-        className="brutal-btn w-full bg-foreground text-background text-lg font-semibold flex items-center justify-center gap-2 py-4"
+        className="brutal-btn w-full text-white text-lg font-semibold flex items-center justify-center gap-2 py-4"
+        style={{ background: "linear-gradient(135deg, #F97316 0%, #EA580C 100%)" }}
       >
         <Save className="w-5 h-5" />
         {saving ? "กำลังบันทึก..." : "บันทึก"}

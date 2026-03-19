@@ -36,7 +36,7 @@ const LABEL_MAP: Record<string, string> = {
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="brutal-card p-3 text-xs !shadow-[2px_2px_0px_oklch(0.15_0.02_280)]">
+    <div className="brutal-card p-3 text-xs !shadow-[2px_2px_0px_#F97316]">
       <p className="font-semibold mb-1">{formatDateShort(label)}</p>
       {payload.map((p: any) => (
         <div key={p.dataKey} className="flex items-center gap-2">

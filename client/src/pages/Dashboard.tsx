@@ -1,6 +1,6 @@
 /**
  * Dashboard Page — Today's summary with category breakdown and recent activity
- * Design: Tropical Operations Console — Neo-Brutalist cards with bold category colors
+ * Design: Orange & White — Neo-Brutalist cards with orange accent
  */
 import { useMemo } from "react";
 import { useData } from "@/contexts/DataContext";
@@ -88,7 +88,8 @@ export default function Dashboard() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="brutal-card p-5 mb-5 bg-foreground text-background"
+        className="brutal-card p-5 mb-5 text-white"
+        style={{ background: "linear-gradient(135deg, #F97316 0%, #EA580C 100%)" }}
       >
         <div className="flex items-center justify-between">
           <div>

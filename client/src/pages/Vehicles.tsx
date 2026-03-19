@@ -106,7 +106,7 @@ export default function Vehicles() {
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={() => setShowAdd(true)}
-          className="brutal-btn bg-foreground text-background flex items-center gap-1.5 text-sm py-2.5"
+          className="brutal-btn bg-orange-500 text-white border-orange-600 flex items-center gap-1.5 text-sm py-2.5"
         >
           <Plus className="w-4 h-4" />
           เพิ่ม
@@ -136,8 +136,8 @@ export default function Vehicles() {
                   className="brutal-card p-4"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-                      <Car className="w-6 h-6 text-muted-foreground" />
+                    <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                      <Car className="w-6 h-6 text-orange-500" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-base">{plate.plate}</p>

@@ -1,6 +1,6 @@
 /**
  * BottomNav — Mobile bottom tab navigation
- * Design: Fixed bottom bar with 5 tabs + center FAB, neo-brutalist style
+ * Design: Orange & White — orange active states, orange FAB
  */
 import { useLocation, Link } from "wouter";
 import { motion } from "framer-motion";
@@ -11,6 +11,7 @@ import {
   BarChart3,
   Car,
   MoreHorizontal,
+  Settings,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -24,7 +25,7 @@ const NAV_ITEMS = [
 
 const MORE_ITEMS = [
   { path: "/vehicles", label: "ทะเบียนรถ", icon: Car },
-  { path: "/settings", label: "ตั้งค่า", icon: MoreHorizontal },
+  { path: "/settings", label: "ตั้งค่า", icon: Settings },
 ];
 
 export default function BottomNav() {
@@ -62,7 +63,7 @@ export default function BottomNav() {
                   setShowMore(false);
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors ${
-                  active ? "bg-foreground text-background" : "hover:bg-secondary"
+                  active ? "bg-orange-500 text-white" : "hover:bg-orange-50"
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -73,7 +74,7 @@ export default function BottomNav() {
         </motion.div>
       )}
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t-[2.5px] border-foreground safe-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-orange-200 safe-bottom">
         <div className="max-w-lg mx-auto flex items-end justify-around px-2 pt-1 pb-1">
           {NAV_ITEMS.map((item) => {
             const active = item.isMore ? isMoreActive : location === item.path;
@@ -87,21 +88,23 @@ export default function BottomNav() {
                     className="relative -top-4"
                   >
                     <div
-                      className={`w-14 h-14 rounded-2xl flex items-center justify-center border-[2.5px] border-foreground ${
+                      className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 ${
                         location === item.path
-                          ? "bg-foreground text-background"
-                          : "bg-card text-foreground"
+                          ? "bg-orange-500 text-white border-orange-600"
+                          : "bg-white text-orange-500 border-orange-300"
                       }`}
                       style={{
                         boxShadow:
                           location === item.path
                             ? "none"
-                            : "3px 3px 0px oklch(0.15 0.02 280)",
+                            : "3px 3px 0px #F97316",
                       }}
                     >
                       <Icon className="w-6 h-6" strokeWidth={2.5} />
                     </div>
-                    <span className="text-[10px] font-medium text-center block mt-0.5">
+                    <span className={`text-[10px] font-medium text-center block mt-0.5 ${
+                      location === item.path ? "text-orange-600" : "text-gray-400"
+                    }`}>
                       {item.label}
                     </span>
                   </motion.div>
@@ -120,8 +123,8 @@ export default function BottomNav() {
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
                       active
-                        ? "bg-foreground text-background"
-                        : "text-muted-foreground"
+                        ? "bg-orange-500 text-white"
+                        : "text-gray-400"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -129,8 +132,8 @@ export default function BottomNav() {
                   <span
                     className={`text-[10px] mt-0.5 ${
                       active
-                        ? "font-semibold text-foreground"
-                        : "text-muted-foreground"
+                        ? "font-semibold text-orange-600"
+                        : "text-gray-400"
                     }`}
                   >
                     {item.label}
@@ -148,8 +151,8 @@ export default function BottomNav() {
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
                       active
-                        ? "bg-foreground text-background"
-                        : "text-muted-foreground"
+                        ? "bg-orange-500 text-white"
+                        : "text-gray-400"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -157,8 +160,8 @@ export default function BottomNav() {
                   <span
                     className={`text-[10px] mt-0.5 ${
                       active
-                        ? "font-semibold text-foreground"
-                        : "text-muted-foreground"
+                        ? "font-semibold text-orange-600"
+                        : "text-gray-400"
                     }`}
                   >
                     {item.label}

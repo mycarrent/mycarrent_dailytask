@@ -1,6 +1,6 @@
 /**
  * App-specific utility helpers
- * Design: "Tropical Operations Console" — Neo-Brutalist with color-coded categories
+ * Design: Orange & White — Neo-Brutalist with color-coded categories
  */
 import type { Category, Entry } from "./db";
 

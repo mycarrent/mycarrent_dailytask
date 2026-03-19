@@ -149,7 +149,7 @@ export default function History() {
           whileTap={{ scale: 0.9 }}
           onClick={() => setShowFilters(!showFilters)}
           className={`brutal-btn flex items-center gap-1.5 text-sm py-2 px-3 ${
-            hasFilters ? "bg-foreground text-background" : "bg-card"
+            hasFilters ? "bg-orange-500 text-white border-orange-600" : "bg-card"
           }`}
         >
           <Filter className="w-4 h-4" />
@@ -192,7 +192,7 @@ export default function History() {
                     onClick={() => setFilterCategory("all")}
                     className={`px-3 py-1.5 rounded-lg text-sm border-2 transition-colors ${
                       filterCategory === "all"
-                        ? "bg-foreground text-background border-foreground"
+                        ? "bg-orange-500 text-white border-orange-500"
                         : "border-border bg-card"
                     }`}
                   >

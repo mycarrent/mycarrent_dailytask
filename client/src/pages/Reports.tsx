@@ -138,7 +138,7 @@ export default function Reports() {
     if (!exportRef.current) return;
     try {
       const canvas = await html2canvas(exportRef.current, {
-        backgroundColor: "#FFF8F0",
+        backgroundColor: "#FFFFFF",
         scale: 2,
       });
       const url = canvas.toDataURL("image/png");
@@ -168,7 +168,7 @@ export default function Reports() {
             onClick={() => setPeriod(key)}
             className={`flex-1 brutal-btn text-sm py-2.5 flex items-center justify-center gap-1.5 ${
               period === key
-                ? "bg-foreground text-background"
+                ? "bg-orange-500 text-white border-orange-600"
                 : "bg-card"
             }`}
           >
@@ -195,7 +195,8 @@ export default function Reports() {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="brutal-card p-5 mb-4 bg-foreground text-background"
+          className="brutal-card p-5 mb-4 text-white"
+          style={{ background: "linear-gradient(135deg, #F97316 0%, #EA580C 100%)" }}
         >
           <p className="text-sm opacity-80 mb-1">รวมรายจ่ายทั้งหมด</p>
           <p className="text-3xl font-bold num-display">{formatPriceFull(total)}</p>

@@ -4,8 +4,8 @@
   "description": "ระบบจัดการงานรถเช่า ล้างรถ ส่งรถ เก็บรถ",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FFF8F0",
-  "theme_color": "#1A1A2E",
+  "background_color": "#FFFFFF",
+  "theme_color": "#F97316",
   "orientation": "portrait-primary",
   "icons": [
     {

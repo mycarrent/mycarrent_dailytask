@@ -1,6 +1,6 @@
 /**
  * Settings Page — App info, seed sample data, clear data
- * Design: Simple settings list
+ * Design: Orange & White theme
  */
 import { useState, useEffect } from "react";
 import { useData } from "@/contexts/DataContext";
@@ -8,8 +8,6 @@ import { motion } from "framer-motion";
 import {
   Database,
   Trash2,
-  Download,
-  Info,
   Smartphone,
   Wifi,
   WifiOff,
@@ -25,6 +23,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663452232695/Geqw5Dwwk2pA5LmRx3Tkji/my-car-rent-logo_efb7efea.webp";
 
 export default function Settings() {
   const { seedData, entries, plates } = useData();
@@ -66,23 +66,19 @@ export default function Settings() {
       {/* App Info */}
       <div className="brutal-card p-5 mb-4">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-14 h-14 rounded-2xl bg-foreground text-background flex items-center justify-center text-xl font-bold">
-            MCR
-          </div>
-          <div>
-            <h2 className="text-lg font-bold">My Car Rent</h2>
-            <p className="text-sm text-muted-foreground">
-              ระบบจัดการงานรถเช่า v1.0
-            </p>
-          </div>
+          <img
+            src={LOGO_URL}
+            alt="My Car Rent"
+            className="h-14 w-auto"
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-secondary rounded-lg p-3 text-center">
-            <p className="text-2xl font-bold num-display">{entries.length}</p>
+          <div className="bg-orange-50 rounded-lg p-3 text-center border border-orange-200">
+            <p className="text-2xl font-bold num-display text-orange-600">{entries.length}</p>
             <p className="text-xs text-muted-foreground">รายการทั้งหมด</p>
           </div>
-          <div className="bg-secondary rounded-lg p-3 text-center">
-            <p className="text-2xl font-bold num-display">{plates.length}</p>
+          <div className="bg-orange-50 rounded-lg p-3 text-center border border-orange-200">
+            <p className="text-2xl font-bold num-display text-orange-600">{plates.length}</p>
             <p className="text-xs text-muted-foreground">ทะเบียนรถ</p>
           </div>
         </div>
@@ -112,7 +108,7 @@ export default function Settings() {
       {/* PWA Install */}
       <div className="brutal-card p-4 mb-4">
         <div className="flex items-center gap-3">
-          <Smartphone className="w-5 h-5" />
+          <Smartphone className="w-5 h-5 text-orange-500" />
           <div>
             <p className="font-medium text-sm">ติดตั้งแอป</p>
             <p className="text-xs text-muted-foreground">
@@ -129,7 +125,7 @@ export default function Settings() {
           onClick={handleSeedData}
           className="brutal-btn w-full bg-card text-left flex items-center gap-3 py-3.5"
         >
-          <Database className="w-5 h-5 text-blue-500" />
+          <Database className="w-5 h-5 text-orange-500" />
           <div>
             <p className="font-medium text-sm">เพิ่มข้อมูลตัวอย่าง</p>
             <p className="text-xs text-muted-foreground">
