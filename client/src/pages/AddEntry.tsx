@@ -239,7 +239,7 @@ export default function AddEntry() {
         </div>
         {/* Quick price buttons */}
         <div className="flex gap-2 mt-2 flex-wrap">
-          {[200, 300, 500, 700, 1000].map((p) => (
+          {[25, 50, 75, 100, 120].map((p) => (
             <button
               key={p}
               onClick={() => setPrice(String(p))}

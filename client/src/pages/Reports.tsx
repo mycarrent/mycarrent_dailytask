@@ -3,7 +3,7 @@
  * Design: Category breakdown cards, grand total, period switching
  * Changed: "รายได้" → "รายจ่าย", added "other" category
  */
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { useData } from "@/contexts/DataContext";
 import {
   CATEGORIES,
@@ -27,14 +27,12 @@ import {
   Calendar,
   Download,
   Copy,
-  Image as ImageIcon,
-  FileText,
+  Share2,
   FileSpreadsheet,
   TrendingUp,
   Award,
 } from "lucide-react";
 import { toast } from "sonner";
-import html2canvas from "html2canvas";
 import DailyChart from "@/components/DailyChart";
 
 type Period = "daily" | "weekly" | "monthly";
@@ -43,7 +41,6 @@ export default function Reports() {
   const { entries } = useData();
   const [period, setPeriod] = useState<Period>("daily");
   const [selectedDate, setSelectedDate] = useState(getTodayStr());
-  const exportRef = useRef<HTMLDivElement>(null);
 
   const dateRange = useMemo(() => {
     switch (period) {
@@ -134,21 +131,21 @@ export default function Reports() {
     toast.success("ดาวน์โหลด CSV แล้ว");
   };
 
-  const handleExportImage = async () => {
-    if (!exportRef.current) return;
-    try {
-      const canvas = await html2canvas(exportRef.current, {
-        backgroundColor: "#FFFFFF",
-        scale: 2,
-      });
-      const url = canvas.toDataURL("image/png");
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `my-car-rent-report-${dateRange.start}.png`;
-      a.click();
-      toast.success("ดาวน์โหลดรูปภาพแล้ว");
-    } catch {
-      toast.error("ไม่สามารถสร้างรูปภาพได้");
+  const handleShare = async () => {
+    const text = entriesToText(filteredEntries, periodLabel);
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+      } catch (err: unknown) {
+        // User cancelled share — ignore
+        if (err instanceof Error && err.name !== "AbortError") {
+          toast.error("ไม่สามารถแชร์ได้");
+        }
+      }
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(text);
+      toast.success("คัดลอกข้อความแล้ว (เบราว์เซอร์ไม่รองรับการแชร์)");
     }
   };
 
@@ -190,7 +187,7 @@ export default function Reports() {
       </div>
 
       {/* Export Card (for image capture) */}
-      <div ref={exportRef}>
+      <div>
         {/* Grand Total */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -291,11 +288,11 @@ export default function Reports() {
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.95 }}
-            onClick={handleExportImage}
+            onClick={handleShare}
             className="brutal-btn bg-card text-sm py-3 flex flex-col items-center gap-1.5"
           >
-            <ImageIcon className="w-5 h-5" />
-            <span>รูปภาพ</span>
+            <Share2 className="w-5 h-5" />
+            <span>แชร์</span>
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.95 }}
