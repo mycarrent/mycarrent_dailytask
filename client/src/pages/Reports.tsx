@@ -1,7 +1,8 @@
-/**
+/*
  * Reports Page — Summary & Reports with daily/weekly/monthly views
  * Design: Category breakdown cards, grand total, period switching
  * Changed: "รายได้" → "รายจ่าย", added "other" category
+ * New: PDF export, period comparison (current vs previous)
  */
 import { useState, useMemo } from "react";
 import { useData } from "@/contexts/DataContext";
@@ -31,7 +32,10 @@ import {
   FileSpreadsheet,
   TrendingUp,
   Award,
+  FileText,
+  TrendingDown,
 } from "lucide-react";
+// Dynamic imports to avoid React hook errors - imported inside functions
 import { toast } from "sonner";
 import DailyChart from "@/components/DailyChart";
 
@@ -75,6 +79,36 @@ export default function Reports() {
     );
     return best?.total > 0 ? best : null;
   }, [summary]);
+
+  // Previous period data for comparison
+  const previousDateRange = useMemo(() => {
+    const prevStart = new Date(dateRange.start + "T00:00:00");
+    const prevEnd = new Date(dateRange.end + "T00:00:00");
+    const daysDiff = Math.floor((prevEnd.getTime() - prevStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    prevStart.setDate(prevStart.getDate() - daysDiff);
+    prevEnd.setDate(prevEnd.getDate() - daysDiff);
+    return {
+      start: prevStart.toISOString().split("T")[0],
+      end: prevEnd.toISOString().split("T")[0],
+    };
+  }, [dateRange]);
+
+  const previousEntries = useMemo(
+    () =>
+      entries.filter(
+        (e) => e.date >= previousDateRange.start && e.date <= previousDateRange.end
+      ),
+    [entries, previousDateRange]
+  );
+
+  const previousTotal = useMemo(() => totalIncome(previousEntries), [previousEntries]);
+
+  const comparison = useMemo(() => {
+    if (previousTotal === 0) return null;
+    const diff = total - previousTotal;
+    const pct = Math.round((diff / previousTotal) * 100);
+    return { diff, pct };
+  }, [total, previousTotal]);
 
   // Chart data for the period
   const chartData = useMemo(() => {
@@ -121,7 +155,7 @@ export default function Reports() {
 
   const handleExportCSV = () => {
     const csv = entriesToCSV(filteredEntries);
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -146,6 +180,43 @@ export default function Reports() {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(text);
       toast.success("คัดลอกข้อความแล้ว (เบราว์เซอร์ไม่รองรับการแชร์)");
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const element = document.getElementById("pdf-export-content");
+      if (!element) {
+        toast.error("ไม่พบเนื้อหาที่จะส่งออก");
+        return;
+      }
+
+      // Dynamic imports to avoid React hook errors
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+
+      // Create canvas from the element
+      const canvas = await html2canvas(element, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+      });
+
+      // Create PDF
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.save(`my-car-rent-report-${dateRange.start}.pdf`);
+      toast.success("ดาวน์โหลด PDF แล้ว");
+    } catch (error) {
+      console.error("PDF export error:", error);
+      toast.error("ไม่สามารถส่งออก PDF ได้");
     }
   };
 
@@ -186,8 +257,40 @@ export default function Reports() {
         <p className="text-xs text-muted-foreground mt-1 px-1">{periodLabel}</p>
       </div>
 
+      {/* Period Comparison */}
+      {comparison && previousTotal > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="clean-card p-4 mb-4 bg-card border border-border"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">เปรียบเทียบกับช่วงเวลาที่แล้ว</p>
+              <p className="text-sm font-medium">
+                {formatPriceFull(previousTotal)} → {formatPriceFull(total)}
+              </p>
+            </div>
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${
+              comparison.diff >= 0 ? "bg-green-50" : "bg-red-50"
+            }`}>
+              {comparison.diff >= 0 ? (
+                <TrendingUp className="w-4 h-4 text-green-600" />
+              ) : (
+                <TrendingDown className="w-4 h-4 text-red-600" />
+              )}
+              <span className={`text-sm font-bold num-display ${
+                comparison.diff >= 0 ? "text-green-600" : "text-red-600"
+              }`}>
+                {comparison.diff >= 0 ? "+" : ""}{comparison.pct}%
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Export Card (for image capture) */}
-      <div>
+      <div id="pdf-export-content">
         {/* Grand Total */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -277,7 +380,7 @@ export default function Reports() {
           <Download className="w-4 h-4" />
           ส่งออกรายงาน
         </h2>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleCopyText}
@@ -301,6 +404,14 @@ export default function Reports() {
           >
             <FileSpreadsheet className="w-5 h-5" />
             <span>CSV</span>
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={handleExportPDF}
+            className="clean-btn bg-card text-sm py-3 flex flex-col items-center gap-1.5"
+          >
+            <FileText className="w-5 h-5" />
+            <span>PDF</span>
           </motion.button>
         </div>
       </div>
