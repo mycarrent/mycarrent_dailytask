@@ -1,7 +1,12 @@
 /**
  * DailyChart — Stacked bar chart using Recharts
  * Shows expense breakdown by category (wash, delivery, pickup, other)
+ *
+ * Performance: The component is wrapped in React.memo so Recharts does not
+ * re-render the entire chart when unrelated state changes in the parent page.
+ * CustomTooltip is also memoized to keep its reference stable between renders.
  */
+import { memo } from "react";
 import {
   BarChart,
   Bar,
@@ -33,12 +38,22 @@ const LABEL_MAP: Record<string, string> = {
   other: "อื่นๆ",
 };
 
-function CustomTooltip({ active, payload, label }: any) {
+// Memoized tooltip — stable reference prevents Recharts from re-creating the
+// tooltip component on every parent render.
+const CustomTooltip = memo(function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: { dataKey: string; fill: string; value: number }[];
+  label?: string;
+}) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white rounded-xl p-3 text-xs shadow-lg border border-gray-100">
-      <p className="font-semibold mb-1">{formatDateShort(label)}</p>
-      {payload.map((p: any) => (
+      <p className="font-semibold mb-1">{label ? formatDateShort(label) : ""}</p>
+      {payload.map((p) => (
         <div key={p.dataKey} className="flex items-center gap-2">
           <div
             className="w-2.5 h-2.5 rounded-sm"
@@ -50,9 +65,11 @@ function CustomTooltip({ active, payload, label }: any) {
       ))}
     </div>
   );
-}
+});
 
-export default function DailyChart({ data }: Props) {
+// Wrap the whole chart in React.memo — Recharts is expensive to reconcile;
+// skipping re-renders when `data` hasn't changed saves significant work.
+const DailyChart = memo(function DailyChart({ data }: Props) {
   if (!data.length) return null;
 
   return (
@@ -74,11 +91,13 @@ export default function DailyChart({ data }: Props) {
           tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : v)}
         />
         <Tooltip content={<CustomTooltip />} />
-        <Bar dataKey="wash" stackId="a" fill="#3B82F6" radius={[0, 0, 0, 0]} />
+        <Bar dataKey="wash"     stackId="a" fill="#3B82F6" radius={[0, 0, 0, 0]} />
         <Bar dataKey="delivery" stackId="a" fill="#10B981" radius={[0, 0, 0, 0]} />
-        <Bar dataKey="pickup" stackId="a" fill="#F97316" radius={[0, 0, 0, 0]} />
-        <Bar dataKey="other" stackId="a" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="pickup"   stackId="a" fill="#F97316" radius={[0, 0, 0, 0]} />
+        <Bar dataKey="other"    stackId="a" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
-}
+});
+
+export default DailyChart;

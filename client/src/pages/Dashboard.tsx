@@ -55,22 +55,40 @@ export default function Dashboard() {
 
   // Last 7 days data for chart
   const last7Days = useMemo(() => {
-    const days: { date: string; total: number; wash: number; delivery: number; pickup: number; other: number }[] = [];
+    // Build the set of the 7 date strings we care about
+    const now = new Date();
+    const dateKeys: string[] = [];
     for (let i = 6; i >= 0; i--) {
-      const d = new Date();
+      const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split("T")[0];
-      const dayEntries = entries.filter((e) => e.date === dateStr);
-      days.push({
-        date: dateStr,
-        total: totalIncome(dayEntries),
-        wash: dayEntries.filter((e) => e.category === "wash").reduce((s, e) => s + e.price, 0),
-        delivery: dayEntries.filter((e) => e.category === "delivery").reduce((s, e) => s + e.price, 0),
-        pickup: dayEntries.filter((e) => e.category === "pickup").reduce((s, e) => s + e.price, 0),
-        other: dayEntries.filter((e) => e.category === "other").reduce((s, e) => s + e.price, 0),
-      });
+      dateKeys.push(d.toISOString().split("T")[0]);
     }
-    return days;
+    const dateSet = new Set(dateKeys);
+
+    // Single O(N) pass — only look at entries within the 7-day window
+    type DayAccum = { wash: number; delivery: number; pickup: number; other: number };
+    const accumMap = new Map<string, DayAccum>();
+    for (const e of entries) {
+      if (!dateSet.has(e.date)) continue;
+      let day = accumMap.get(e.date);
+      if (!day) {
+        day = { wash: 0, delivery: 0, pickup: 0, other: 0 };
+        accumMap.set(e.date, day);
+      }
+      day[e.category] += e.price;
+    }
+
+    return dateKeys.map((dateStr) => {
+      const d = accumMap.get(dateStr) ?? { wash: 0, delivery: 0, pickup: 0, other: 0 };
+      return {
+        date: dateStr,
+        total: d.wash + d.delivery + d.pickup + d.other,
+        wash: d.wash,
+        delivery: d.delivery,
+        pickup: d.pickup,
+        other: d.other,
+      };
+    });
   }, [entries]);
 
   return (

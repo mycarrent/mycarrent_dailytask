@@ -78,21 +78,37 @@ export default function Reports() {
   }, [summary]);
 
   // Chart data for the period
+  // Performance: single O(N) pass over filteredEntries to accumulate per-day
+  // category totals into a Map, then one loop over the date range to build the
+  // output array — avoids the previous O(N×M) nested filter/reduce pattern.
   const chartData = useMemo(() => {
+    // 1. Accumulate totals from entries in a single pass
+    type DayAccum = { wash: number; delivery: number; pickup: number; other: number };
+    const accumMap = new Map<string, DayAccum>();
+    for (const e of filteredEntries) {
+      let day = accumMap.get(e.date);
+      if (!day) {
+        day = { wash: 0, delivery: 0, pickup: 0, other: 0 };
+        accumMap.set(e.date, day);
+      }
+      day[e.category] += e.price;
+    }
+
+    // 2. Walk the date range and emit one record per day
     const days: { date: string; total: number; wash: number; delivery: number; pickup: number; other: number }[] = [];
     const start = new Date(dateRange.start + "T00:00:00");
-    const end = new Date(dateRange.end + "T00:00:00");
+    const end   = new Date(dateRange.end   + "T00:00:00");
     const current = new Date(start);
     while (current <= end) {
       const dateStr = current.toISOString().split("T")[0];
-      const dayEntries = filteredEntries.filter((e) => e.date === dateStr);
+      const d = accumMap.get(dateStr) ?? { wash: 0, delivery: 0, pickup: 0, other: 0 };
       days.push({
         date: dateStr,
-        total: totalIncome(dayEntries),
-        wash: dayEntries.filter((e) => e.category === "wash").reduce((s, e) => s + e.price, 0),
-        delivery: dayEntries.filter((e) => e.category === "delivery").reduce((s, e) => s + e.price, 0),
-        pickup: dayEntries.filter((e) => e.category === "pickup").reduce((s, e) => s + e.price, 0),
-        other: dayEntries.filter((e) => e.category === "other").reduce((s, e) => s + e.price, 0),
+        total: d.wash + d.delivery + d.pickup + d.other,
+        wash: d.wash,
+        delivery: d.delivery,
+        pickup: d.pickup,
+        other: d.other,
       });
       current.setDate(current.getDate() + 1);
     }

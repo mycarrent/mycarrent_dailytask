@@ -226,9 +226,21 @@ export async function seedRealPlates(): Promise<void> {
     { plate: "ขธ 996", model: "HRV", color: "ขาว" },
   ];
 
-  for (const p of realPlates) {
-    await addPlate(p.plate, p.model, p.color);
-  }
+  // Batch insert all plates in a single IndexedDB transaction for speed
+  const tx = db.transaction("plates", "readwrite");
+  const now = Date.now();
+  await Promise.all(
+    realPlates.map((p) =>
+      tx.store.put({
+        id: generateId(),
+        plate: p.plate.trim(),
+        model: p.model.trim(),
+        color: p.color.trim(),
+        createdAt: now,
+      })
+    )
+  );
+  await tx.done;
 }
 
 // ── Seed Sample Data ───────────────────────────────────────────────
@@ -259,7 +271,12 @@ export async function seedSampleData(): Promise<void> {
     pickup: ["เก็บจากสนามบิน", "เก็บจากโรงแรม", "เก็บจากอู่", ""],
   };
 
+  // Build all sample Entry objects in memory first, then batch-insert them
+  // in a single IndexedDB transaction — much faster than one await per entry.
+  const now = Date.now();
   const today = new Date();
+  const sampleEntries: Entry[] = [];
+
   for (let daysAgo = 0; daysAgo < 30; daysAgo++) {
     const date = new Date(today);
     date.setDate(date.getDate() - daysAgo);
@@ -269,20 +286,19 @@ export async function seedSampleData(): Promise<void> {
     const numEntries = 2 + Math.floor(Math.random() * 4);
     for (let i = 0; i < numEntries; i++) {
       const cat = categories[Math.floor(Math.random() * categories.length)];
-      const plate =
-        plateNumbers[Math.floor(Math.random() * plateNumbers.length)];
-      const price =
-        prices[cat][Math.floor(Math.random() * prices[cat].length)];
-      const note =
-        notes[cat][Math.floor(Math.random() * notes[cat].length)];
-
-      await addEntry({
+      const plate = plateNumbers[Math.floor(Math.random() * plateNumbers.length)];
+      const price = prices[cat][Math.floor(Math.random() * prices[cat].length)];
+      const note  = notes[cat][Math.floor(Math.random() * notes[cat].length)];
+      sampleEntries.push({
+        id: generateId(),
         date: dateStr,
         category: cat,
         plate,
         price,
         note,
         customTitle: "",
+        createdAt: now,
+        updatedAt: now,
       });
     }
 
@@ -290,14 +306,22 @@ export async function seedSampleData(): Promise<void> {
     if (Math.random() < 0.3) {
       const otherTitles = ["ค่าน้ำมัน", "ค่าทางด่วน", "ค่าที่จอดรถ", "ค่าซ่อมบำรุง", "ค่าประกัน"];
       const otherPrices = [100, 150, 200, 300, 500, 1000];
-      await addEntry({
+      sampleEntries.push({
+        id: generateId(),
         date: dateStr,
         category: "other",
         plate: "",
         price: otherPrices[Math.floor(Math.random() * otherPrices.length)],
         note: "",
         customTitle: otherTitles[Math.floor(Math.random() * otherTitles.length)],
+        createdAt: now,
+        updatedAt: now,
       });
     }
   }
+
+  // Batch insert all entries in a single transaction
+  const tx = db.transaction("entries", "readwrite");
+  await Promise.all(sampleEntries.map((entry) => tx.store.put(entry)));
+  await tx.done;
 }
