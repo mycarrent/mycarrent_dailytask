@@ -166,6 +166,32 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        /**
+         * Split large vendor libraries into separate cacheable chunks.
+         * - "vendor-react"  : react + react-dom (rarely changes)
+         * - "vendor-motion" : framer-motion (animation library, ~100 kB)
+         * - "vendor-charts" : recharts + dependencies (chart library, ~200 kB)
+         * - "vendor-ui"     : all @radix-ui primitives bundled together
+         * Everything else (app code) stays in the default chunk(s).
+         */
+        manualChunks(id: string) {
+          if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
+            return "vendor-react";
+          }
+          if (id.includes("node_modules/framer-motion/")) {
+            return "vendor-motion";
+          }
+          if (id.includes("node_modules/recharts/") || id.includes("node_modules/d3-")) {
+            return "vendor-charts";
+          }
+          if (id.includes("node_modules/@radix-ui/")) {
+            return "vendor-ui";
+          }
+        },
+      },
+    },
   },
   server: {
     port: 3000,
