@@ -5,7 +5,7 @@
  */
 import { useState, useMemo } from "react";
 import { useData } from "@/contexts/DataContext";
-import { CATEGORIES, CATEGORY_LIST, getTodayStr } from "@/lib/utils-app";
+import { CATEGORIES, CATEGORY_LIST, getTodayStr, formatPriceFull } from "@/lib/utils-app";
 import type { Category } from "@/lib/db";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Save, Droplets, Truck, KeyRound, ClipboardList, StickyNote } from "lucide-react";
@@ -303,7 +303,7 @@ export default function AddEntry() {
                   </p>
                 </div>
                 <span className="num-display text-lg font-bold">
-                  ฿{Number(price).toLocaleString()}
+                  {formatPriceFull(Number(price))}
                 </span>
               </div>
             </div>

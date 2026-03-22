@@ -11,6 +11,7 @@ import {
   formatPriceFull,
   formatDate,
   formatDateShort,
+  formatDateMonthYear,
   getTodayStr,
   getWeekRange,
   getMonthRange,
@@ -105,10 +106,7 @@ export default function Reports() {
       case "weekly":
         return `${formatDateShort(dateRange.start)} - ${formatDateShort(dateRange.end)}`;
       case "monthly":
-        return new Date(selectedDate + "T00:00:00").toLocaleDateString("th-TH", {
-          month: "long",
-          year: "numeric",
-        });
+        return formatDateMonthYear(selectedDate);
     }
   }, [period, selectedDate, dateRange]);
 

@@ -1,6 +1,10 @@
 /**
  * App-specific utility helpers
  * Design: Orange & White — Neo-Brutalist with color-coded categories
+ *
+ * Performance: Intl.NumberFormat and Intl.DateTimeFormat instances are created
+ * once and reused across all calls, avoiding the overhead of constructing a new
+ * formatter on every render cycle.
  */
 import type { Category, Entry } from "./db";
 
@@ -45,31 +49,61 @@ export const CATEGORIES: Record<
 
 export const CATEGORY_LIST: Category[] = ["wash", "delivery", "pickup", "other"];
 
+// ── Cached Intl Formatters ─────────────────────────────────────────
+// Creating Intl instances is expensive. Cache them as module-level singletons
+// so they are constructed only once and reused on every call.
+
+const _numberFmt = new Intl.NumberFormat("th-TH");
+
+const _numberFmtFixed = new Intl.NumberFormat("th-TH", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const _dateFmtLong = new Intl.DateTimeFormat("th-TH", {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+
+const _dateFmtShort = new Intl.DateTimeFormat("th-TH", {
+  month: "short",
+  day: "numeric",
+});
+
+const _dateFmtMonthYear = new Intl.DateTimeFormat("th-TH", {
+  month: "long",
+  year: "numeric",
+});
+
 // ── Formatting ─────────────────────────────────────────────────────
 export function formatPrice(price: number): string {
-  return new Intl.NumberFormat("th-TH").format(price);
+  return _numberFmt.format(price);
 }
 
 export function formatPriceFull(price: number): string {
-  return `฿${formatPrice(price)}`;
+  return `฿${_numberFmt.format(price)}`;
+}
+
+/**
+ * Parse a YYYY-MM-DD string into a local-midnight Date.
+ * Using "T00:00:00" prevents UTC-offset issues on mobile devices.
+ */
+function parseDateStr(dateStr: string): Date {
+  return new Date(dateStr + "T00:00:00");
 }
 
 export function formatDate(dateStr: string): string {
-  const date = new Date(dateStr + "T00:00:00");
-  return date.toLocaleDateString("th-TH", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  return _dateFmtLong.format(parseDateStr(dateStr));
 }
 
 export function formatDateShort(dateStr: string): string {
-  const date = new Date(dateStr + "T00:00:00");
-  return date.toLocaleDateString("th-TH", {
-    month: "short",
-    day: "numeric",
-  });
+  return _dateFmtShort.format(parseDateStr(dateStr));
+}
+
+export function formatDateMonthYear(dateStr: string): string {
+  return _dateFmtMonthYear.format(parseDateStr(dateStr));
 }
 
 export function getTodayStr(): string {
@@ -78,7 +112,7 @@ export function getTodayStr(): string {
 
 // ── Date Ranges ────────────────────────────────────────────────────
 export function getWeekRange(refDate?: string): { start: string; end: string } {
-  const d = refDate ? new Date(refDate + "T00:00:00") : new Date();
+  const d = refDate ? parseDateStr(refDate) : new Date();
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday start
   const start = new Date(d);
@@ -92,7 +126,7 @@ export function getWeekRange(refDate?: string): { start: string; end: string } {
 }
 
 export function getMonthRange(refDate?: string): { start: string; end: string } {
-  const d = refDate ? new Date(refDate + "T00:00:00") : new Date();
+  const d = refDate ? parseDateStr(refDate) : new Date();
   const start = new Date(d.getFullYear(), d.getMonth(), 1);
   const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
   return {
@@ -184,7 +218,7 @@ export function entriesToText(entries: Entry[], title: string): string {
   return lines.join("\n");
 }
 
-/** Format price with 2 decimal places for text export */
+/** Format price with 2 decimal places for text export — uses cached formatter */
 function formatPriceFixed(price: number): string {
-  return price.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return _numberFmtFixed.format(price);
 }
